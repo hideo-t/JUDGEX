@@ -42,44 +42,153 @@
             </div>
         </div>
 
-        <!-- STEP 2: 入力（3つの質問） -->
-        <div id="step-input" class="step">
+        <!-- プログレスバー -->
+        <div id="progress-container" class="progress-container" style="display: none;">
+            <div class="progress-bar">
+                <div id="progressBar" class="progress-fill"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progressStep">ステップ 1</span> / 3
+            </div>
+        </div>
+
+        <!-- STEP 2-1: Q1 迷いは何？ -->
+        <div id="step-q1" class="step">
             <div class="card input-card">
-                <h2>3つの問いに答えてください</h2>
-                <p class="description">それぞれ10文字以上を推奨（より正確な地図のために）</p>
+                <div class="step-header">
+                    <span class="step-badge">Q1</span>
+                    <h2>迷いは何？</h2>
+                </div>
+                
+                <p class="description">あなたが今、心の中で引っかかっていること、決めかねていることを教えてください。</p>
 
-                <div class="question-group">
-                    <label class="question-label">
-                        <span class="question-number">Q1</span>
-                        <span class="question-text">迷いは何？</span>
-                    </label>
-                    <textarea id="q1" class="question-input" rows="3" placeholder="例：転職すべきかどうか迷っている"></textarea>
-                    <div class="char-counter" data-for="q1">0文字</div>
+                <!-- よくあるパターン（選択式） -->
+                <div class="preset-section">
+                    <div class="preset-label">
+                        <span>💡 よくあるパターンから選ぶ</span>
+                        <button class="preset-toggle" id="togglePresetQ1">表示</button>
+                    </div>
+                    <div class="preset-options" id="presetQ1" style="display: none;">
+                        <button class="preset-btn" data-text="転職すべきかどうか迷っている">💼 転職</button>
+                        <button class="preset-btn" data-text="今の関係を続けるか別れるか迷っている">💔 人間関係</button>
+                        <button class="preset-btn" data-text="独立・起業すべきか迷っている">🚀 独立・起業</button>
+                        <button class="preset-btn" data-text="引っ越しや移住を考えているが決められない">🏠 引っ越し・移住</button>
+                        <button class="preset-btn" data-text="大きな買い物（家・車など）をすべきか迷っている">💰 大きな買い物</button>
+                        <button class="preset-btn" data-text="学校や仕事を辞めるか続けるか迷っている">📚 継続・退出</button>
+                    </div>
                 </div>
 
                 <div class="question-group">
-                    <label class="question-label">
-                        <span class="question-number">Q2</span>
-                        <span class="question-text">選ばなければならないことは何？</span>
-                    </label>
-                    <textarea id="q2" class="question-input" rows="3" placeholder="例：今の会社に残るか、新しい会社に行くか"></textarea>
-                    <div class="char-counter" data-for="q2">0文字</div>
+                    <textarea id="q1" class="question-input" rows="4" placeholder="例：営業職から企画職に転職するか迷っている。今の会社で5年働いているが、新しいことに挑戦したい気持ちと安定を失う不安がある。"></textarea>
+                    <div class="input-footer">
+                        <div class="char-counter" data-for="q1">
+                            <span class="char-count">0</span> / 10文字以上推奨
+                        </div>
+                        <button class="example-btn" id="exampleQ1">📝 例文を見る</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="btnQ1Next" class="btn btn-primary" disabled>次へ →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2-2: Q2 選ばなければならないことは何？ -->
+        <div id="step-q2" class="step">
+            <div class="card input-card">
+                <div class="step-header">
+                    <span class="step-badge">Q2</span>
+                    <h2>選ばなければならないことは何？</h2>
+                </div>
+                
+                <p class="description">具体的な選択肢を明確にしてください。AかBか、やるかやらないか。</p>
+
+                <!-- 前の回答の表示 -->
+                <div class="previous-answer">
+                    <div class="previous-label">Q1の回答</div>
+                    <div id="q1Preview" class="previous-text"></div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-label">
+                        <span>💡 選択肢の形式を選ぶ</span>
+                        <button class="preset-toggle" id="togglePresetQ2">表示</button>
+                    </div>
+                    <div class="preset-options" id="presetQ2" style="display: none;">
+                        <button class="preset-btn" data-text="A（現状維持）か B（変化）か">⚖️ AかBか</button>
+                        <button class="preset-btn" data-text="やるか、やらないか">✅ やる/やらない</button>
+                        <button class="preset-btn" data-text="今すぐか、後でか、諦めるか">⏱️ タイミング</button>
+                        <button class="preset-btn" data-text="複数の選択肢から1つを選ぶ">🎯 複数選択肢</button>
+                    </div>
                 </div>
 
                 <div class="question-group">
-                    <label class="question-label">
-                        <span class="question-number">Q3</span>
-                        <span class="question-text">決めたら引き受けるものは何？</span>
-                    </label>
-                    <textarea id="q3" class="question-input" rows="3" placeholder="例：年収が下がるリスク、または成長機会を失うリスク"></textarea>
-                    <div class="char-counter" data-for="q3">0文字</div>
+                    <textarea id="q2" class="question-input" rows="4" placeholder="例：①今の会社で営業を続ける ②同業他社の企画職に転職する ③異業種の企画職に挑戦する"></textarea>
+                    <div class="input-footer">
+                        <div class="char-counter" data-for="q2">
+                            <span class="char-count">0</span> / 10文字以上推奨
+                        </div>
+                        <button class="example-btn" id="exampleQ2">📝 例文を見る</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="btnQ2Back" class="btn btn-secondary">← 戻る</button>
+                    <button id="btnQ2Next" class="btn btn-primary" disabled>次へ →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2-3: Q3 決めたら引き受けるものは何？ -->
+        <div id="step-q3" class="step">
+            <div class="card input-card">
+                <div class="step-header">
+                    <span class="step-badge">Q3</span>
+                    <h2>決めたら引き受けるものは何？</h2>
+                </div>
+                
+                <p class="description">決断の結果、あなたが背負うもの、失うもの、受け入れなければならないものは何ですか？</p>
+
+                <!-- 前の回答の表示 -->
+                <div class="previous-answer">
+                    <div class="previous-label">Q1・Q2の回答</div>
+                    <div id="q1q2Preview" class="previous-text"></div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-label">
+                        <span>💡 引き受けるものの種類</span>
+                        <button class="preset-toggle" id="togglePresetQ3">表示</button>
+                    </div>
+                    <div class="preset-options" id="presetQ3" style="display: none;">
+                        <button class="preset-btn" data-text="経済的なリスク（収入減、出費増など）">💸 経済的リスク</button>
+                        <button class="preset-btn" data-text="人間関係の変化や喪失">👥 人間関係</button>
+                        <button class="preset-btn" data-text="時間やキャリアの投資">⏳ 時間・キャリア</button>
+                        <button class="preset-btn" data-text="安定や安心感を手放すこと">🛡️ 安定の喪失</button>
+                        <button class="preset-btn" data-text="他の選択肢を諦めること（機会損失）">🚫 機会損失</button>
+                        <button class="preset-btn" data-text="失敗した場合の責任や後悔">😰 失敗のリスク</button>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <textarea id="q3" class="question-input" rows="4" placeholder="例：転職すると年収が100万円下がる可能性がある。営業の専門性を捨てることになる。失敗したら30代後半で再転職が難しくなる。"></textarea>
+                    <div class="input-footer">
+                        <div class="char-counter" data-for="q3">
+                            <span class="char-count">0</span> / 10文字以上推奨
+                        </div>
+                        <button class="example-btn" id="exampleQ3">📝 例文を見る</button>
+                    </div>
                 </div>
 
                 <div id="validationWarning" class="validation-warning" style="display: none;">
-                    ⚠️ 未入力または短い項目があります。地図精度が下がる可能性があります。
+                    ⚠️ 一部の回答が短めです。地図の精度が下がる可能性があります。
                 </div>
 
-                <button id="btnGenerateMap" class="btn btn-primary">MAPを生成（助言なし）</button>
+                <div class="action-buttons">
+                    <button id="btnQ3Back" class="btn btn-secondary">← 戻る</button>
+                    <button id="btnGenerateMap" class="btn btn-primary" disabled>MAPを生成（助言なし）</button>
+                </div>
             </div>
         </div>
 
@@ -126,7 +235,11 @@
 
                 <div class="question-group">
                     <textarea id="followupAnswer" class="question-input" rows="3"></textarea>
-                    <div class="char-counter" data-for="followupAnswer">0文字</div>
+                    <div class="input-footer">
+                        <div class="char-counter" data-for="followupAnswer">
+                            <span class="char-count">0</span> / 10文字以上推奨
+                        </div>
+                    </div>
                 </div>
 
                 <button id="btnSubmitFollowup" class="btn btn-primary">もう一度MAPを生成</button>

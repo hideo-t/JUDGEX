@@ -197,6 +197,163 @@ body {
 }
 
 /* ========================================
+   Progress Bar
+   ======================================== */
+.progress-container {
+    background: white;
+    padding: var(--spacing-md);
+    border-radius: 12px;
+    margin-bottom: var(--spacing-lg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-sm);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    width: 0%;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* ========================================
+   Step Header
+   ======================================== */
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.step-badge {
+    background: var(--primary);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.step-header h2 {
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+/* ========================================
+   Preset Options
+   ======================================== */
+.preset-section {
+    background: #f8f9fa;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.preset-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.preset-toggle {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.preset-toggle:hover {
+    background: var(--primary-light);
+    color: white;
+    border-color: var(--primary-light);
+}
+
+.preset-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.preset-btn {
+    background: white;
+    border: 2px solid var(--border-color);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-normal);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.preset-btn:hover {
+    border-color: var(--primary);
+    background: rgba(44, 95, 124, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preset-btn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   Previous Answer Display
+   ======================================== */
+.previous-answer {
+    background: linear-gradient(135deg, #e8f4f8 0%, #d5e8f0 100%);
+    border-left: 4px solid var(--primary);
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    margin-bottom: var(--spacing-lg);
+}
+
+.previous-label {
+    font-size: 0.85rem;
+    color: var(--primary-dark);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-xs);
+}
+
+.previous-text {
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* ========================================
    Questions
    ======================================== */
 .question-group {
@@ -252,6 +409,54 @@ body {
     font-size: 0.85rem;
     color: var(--text-muted);
     margin-top: var(--spacing-xs);
+}
+
+.char-count {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.char-counter.valid .char-count {
+    color: var(--layer3-color);
+}
+
+.input-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-sm);
+}
+
+.example-btn {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.example-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* ========================================
+   Action Buttons
+   ======================================== */
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    margin-top: var(--spacing-lg);
+}
+
+.action-buttons .btn {
+    flex: 0 1 auto;
+    min-width: 120px;
 }
 
 .validation-warning {
@@ -629,6 +834,27 @@ body {
     
     body {
         padding: var(--spacing-sm);
+    }
+    
+    .preset-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+    }
+    
+    .step-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .step-header h2 {
+        font-size: 1.3rem;
     }
 }
 
