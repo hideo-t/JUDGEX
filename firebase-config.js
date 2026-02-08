@@ -262,11 +262,14 @@ async function saveSession() {
         return;
     }
     
+    // 保存状態を表示
+    showSaveStatus('saving', '💾', '保存中...');
+    
     try {
         const sessionData = {
             sessionId: AppState.sessionId,
             date: firebase.firestore.FieldValue.serverTimestamp(),
-            version: 'v2.4',
+            version: 'v2.5',
             round: AppState.round,
             inputs: {
                 q1: AppState.inputs.q1,
@@ -295,13 +298,44 @@ async function saveSession() {
             .set(sessionData, { merge: true });
         
         console.log('✅ セッション保存成功:', AppState.sessionId);
+        
+        // 保存成功を表示
+        showSaveStatus('saved', '✅', '保存完了！');
+        
+        // 3秒後に非表示
+        setTimeout(() => {
+            const saveStatus = document.getElementById('saveStatus');
+            if (saveStatus) {
+                saveStatus.style.display = 'none';
+            }
+        }, 3000);
+        
     } catch (error) {
         console.error('❌ セッション保存エラー:', error);
         
+        // エラーを表示
+        showSaveStatus('error', '❌', '保存失敗: ' + error.message);
+        
         if (error.code === 'permission-denied') {
-            alert('保存権限がありません。\nFirestoreのセキュリティルールを確認してください。');
+            alert('保存権限がありません。\nFirestoreのセキュリティルールを確認してください。\n\nNEXT_STEPS.md のステップ2を参照してください。');
+        } else {
+            alert('保存エラー: ' + error.message);
         }
     }
+}
+
+// 保存状態を表示
+function showSaveStatus(status, icon, text) {
+    const saveStatus = document.getElementById('saveStatus');
+    const saveStatusIcon = document.getElementById('saveStatusIcon');
+    const saveStatusText = document.getElementById('saveStatusText');
+    
+    if (!saveStatus) return;
+    
+    saveStatus.style.display = 'flex';
+    saveStatus.className = 'save-status ' + status;
+    saveStatusIcon.textContent = icon;
+    saveStatusText.textContent = text;
 }
 
 // 履歴読み込み

@@ -393,6 +393,12 @@
         <div id="step-result" class="step">
             <div class="card result-card">
                 <h2>計測結果</h2>
+                
+                <!-- 保存状態表示 -->
+                <div id="saveStatus" class="save-status" style="display: none;">
+                    <div id="saveStatusIcon">💾</div>
+                    <div id="saveStatusText">保存中...</div>
+                </div>
 
                 <div class="score-display">
                     <div class="score-gauge">
@@ -413,8 +419,21 @@
                     地図（MAP）と指数（JUDGEX²）は渡しました。<br>
                     選ぶのはあなたです。
                 </div>
+                
+                <!-- ログインユーザー向けメッセージ -->
+                <div id="historyLinkMessage" class="history-link-message" style="display: none;">
+                    <p>💡 この診断結果は自動保存されました</p>
+                    <button id="btnViewHistoryFromResult" class="btn-link">
+                        📊 履歴を見る
+                    </button>
+                </div>
 
-                <button id="btnReset" class="btn btn-secondary">最初から始める</button>
+                <div class="action-buttons">
+                    <button id="btnManualSave" class="btn btn-secondary" style="display: none;">
+                        💾 手動保存
+                    </button>
+                    <button id="btnReset" class="btn btn-secondary">最初から始める</button>
+                </div>
             </div>
         </div>
 
@@ -441,7 +460,7 @@
     </div>
 
     <footer class="footer">
-        <p>PRE-JUDGE Suite v2.3 | 助言なし、判断は自分で</p>
+        <p>PRE-JUDGE Suite v2.5 | 助言なし、判断は自分で</p>
     </footer>
 
     <script src="firebase-config.js"></script>

@@ -124,6 +124,18 @@ function setupEventListeners() {
             showStep('step-consent');
         });
     }
+    
+    // 手動保存ボタン
+    const btnManualSave = document.getElementById('btnManualSave');
+    if (btnManualSave) {
+        btnManualSave.addEventListener('click', async () => {
+            if (AppState.loginMode === 'login' && AppState.user) {
+                await saveSession();
+            } else {
+                alert('ログインモードでのみ保存できます。\n\n次回、「ログインモード」を選択してください。');
+            }
+        });
+    }
 
     // Q1の次へ
     document.getElementById('btnQ1Next').addEventListener('click', () => {
@@ -893,6 +905,27 @@ function displayJudgexResult() {
 
     // レーダーチャート
     drawRadarChart(result.axisA, result.axisB, result.axisC);
+    
+    // 手動保存ボタンを表示（ログインモードの場合）
+    const btnManualSave = document.getElementById('btnManualSave');
+    if (btnManualSave && AppState.loginMode === 'login') {
+        btnManualSave.style.display = 'inline-block';
+    }
+    
+    // 履歴リンクメッセージを表示（ログインモードの場合）
+    const historyLinkMessage = document.getElementById('historyLinkMessage');
+    if (historyLinkMessage && AppState.loginMode === 'login' && AppState.user) {
+        historyLinkMessage.style.display = 'block';
+        
+        // 履歴表示ボタンのイベントリスナー
+        const btnViewHistoryFromResult = document.getElementById('btnViewHistoryFromResult');
+        if (btnViewHistoryFromResult) {
+            // 既存のリスナーを削除して新しいものを追加
+            const newBtn = btnViewHistoryFromResult.cloneNode(true);
+            btnViewHistoryFromResult.parentNode.replaceChild(newBtn, btnViewHistoryFromResult);
+            newBtn.addEventListener('click', showHistory);
+        }
+    }
     
     // セッションを保存（ログインモードの場合）
     if (AppState.loginMode === 'login') {
