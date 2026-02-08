@@ -658,6 +658,21 @@ body {
 .layer-actions {
     margin-top: var(--spacing-lg);
     text-align: center;
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+}
+
+.layer-actions .btn {
+    min-width: 200px;
+    font-size: 1.2rem;
+    padding: var(--spacing-md) var(--spacing-xl);
+    box-shadow: 0 4px 12px rgba(44, 95, 124, 0.3);
+}
+
+.layer-actions .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(44, 95, 124, 0.4);
 }
 
 /* ========================================

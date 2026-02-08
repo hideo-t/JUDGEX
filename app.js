@@ -273,10 +273,20 @@ function updateProgress(step) {
 // ステップ管理
 // ========================================
 function showStep(stepId) {
+    console.log('showStep呼び出し:', stepId);
+    
     document.querySelectorAll('.step').forEach(step => {
         step.classList.remove('active');
     });
-    document.getElementById(stepId).classList.add('active');
+    
+    const targetStep = document.getElementById(stepId);
+    if (targetStep) {
+        targetStep.classList.add('active');
+        console.log('ステップを表示:', stepId);
+    } else {
+        console.error('ステップが見つかりません:', stepId);
+    }
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -480,6 +490,20 @@ function generateSummary(q1, q2, q3) {
 // MAP表示
 // ========================================
 function displayMap(map) {
+    console.log('displayMap呼び出し - Layer:', map.layer);
+    
+    // デバッグ情報を表示（開発用）
+    const debugInfo = document.getElementById('debugInfo');
+    const debugLayer = document.getElementById('debugLayer');
+    const debugButton = document.getElementById('debugButton');
+    
+    // URLパラメータでデバッグモードを有効化
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') {
+        debugInfo.style.display = 'block';
+        debugLayer.textContent = map.layer;
+    }
+    
     // Layer表示
     const layerIndicator = document.getElementById('layerIndicator');
     const layerDescription = document.getElementById('layerDescription');
@@ -527,28 +551,46 @@ function displayMap(map) {
         const btn = document.createElement('button');
         btn.className = 'btn btn-primary';
         btn.textContent = '深掘りする';
-        btn.onclick = () => {
+        btn.id = 'btnDeepDive';
+        btn.onclick = (e) => {
+            e.preventDefault();
+            console.log('深掘りボタンがクリックされました');
+            if (debugButton) debugButton.textContent = 'クリックされた！';
             setupFollowup(1);
         };
         actionsContainer.appendChild(btn);
+        console.log('Layer 1のボタンを追加しました');
+        if (debugButton) debugButton.textContent = '深掘りボタン追加済み';
     } else if (map.layer === 2) {
         // Layer 2: 引き受けの言語化へ
         const btn = document.createElement('button');
         btn.className = 'btn btn-primary';
         btn.textContent = '引き受けを言語化する';
-        btn.onclick = () => {
+        btn.id = 'btnAccept';
+        btn.onclick = (e) => {
+            e.preventDefault();
+            console.log('引き受けボタンがクリックされました');
+            if (debugButton) debugButton.textContent = 'クリックされた！';
             setupFollowup(2);
         };
         actionsContainer.appendChild(btn);
+        console.log('Layer 2のボタンを追加しました');
+        if (debugButton) debugButton.textContent = '引き受けボタン追加済み';
     } else {
         // Layer 3: JUDGEX²へ
         const btn = document.createElement('button');
         btn.className = 'btn btn-primary';
         btn.textContent = 'JUDGEX²を計測する';
-        btn.onclick = () => {
+        btn.id = 'btnJudgex';
+        btn.onclick = (e) => {
+            e.preventDefault();
+            console.log('JUDGEX²ボタンがクリックされました');
+            if (debugButton) debugButton.textContent = 'クリックされた！';
             showStep('step-judgex');
         };
         actionsContainer.appendChild(btn);
+        console.log('Layer 3のボタンを追加しました');
+        if (debugButton) debugButton.textContent = 'JUDGEX²ボタン追加済み';
     }
 }
 
@@ -556,6 +598,8 @@ function displayMap(map) {
 // フォローアップ（Layer 1/2の追加質問）
 // ========================================
 function setupFollowup(layer) {
+    console.log('setupFollowup呼び出し - Layer:', layer);
+    
     const title = document.getElementById('followupTitle');
     const description = document.getElementById('followupDescription');
 
@@ -570,13 +614,19 @@ function setupFollowup(layer) {
     const followupTextarea = document.getElementById('followupAnswer');
     followupTextarea.value = '';
     
-    // フォローアップ用の文字カウンター設定
-    followupTextarea.addEventListener('input', () => {
+    // 既存のイベントリスナーをクリア（重複防止）
+    const newTextarea = followupTextarea.cloneNode(true);
+    followupTextarea.parentNode.replaceChild(newTextarea, followupTextarea);
+    
+    // 新しいイベントリスナーを設定
+    const textarea = document.getElementById('followupAnswer');
+    textarea.addEventListener('input', () => {
         updateCharCounter('followupAnswer');
     });
     
     updateCharCounter('followupAnswer');
     
+    console.log('step-followupを表示します');
     showStep('step-followup');
 }
 
