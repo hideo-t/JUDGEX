@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase 診断ツール - PRE-JUDGE Suite</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        h1 {
+            color: #2c5f7c;
+        }
+        .check-item {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ccc;
+        }
+        .check-item.loading {
+            border-left-color: #f39c12;
+        }
+        .check-item.success {
+            border-left-color: #27ae60;
+        }
+        .check-item.error {
+            border-left-color: #e74c3c;
+        }
+        .status {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .detail {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+        .solution {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-left: 3px solid #2c5f7c;
+            border-radius: 4px;
+        }
+        button {
+            background: #2c5f7c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1a3d52;
+        }
+        .info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Firebase 診断ツール</h1>
+    <p>PRE-JUDGE SuiteのFirebase設定とログイン機能をチェックします。</p>
+
+    <div class="info">
+        <strong>📝 使い方:</strong><br>
+        1. このファイルをブラウザで開く<br>
+        2. 「診断開始」ボタンをクリック<br>
+        3. 各項目のステータスを確認<br>
+        4. エラーがあれば解決方法に従う
+    </div>
+
+    <button onclick="runDiagnostics()">診断開始</button>
+    <button onclick="testLogin()">ログインテスト</button>
+    <button onclick="location.reload()">リセット</button>
+
+    <div id="results"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addCheckItem(title, status, detail = '', solution = '') {
+            const item = document.createElement('div');
+            item.className = `check-item ${status}`;
+            
+            let statusText = '';
+            let statusIcon = '';
+            if (status === 'success') {
+                statusText = '✅ 正常';
+                statusIcon = '✅';
+            } else if (status === 'error') {
+                statusText = '❌ エラー';
+                statusIcon = '❌';
+            } else if (status === 'loading') {
+                statusText = '⏳ 確認中...';
+                statusIcon = '⏳';
+            }
+            
+            item.innerHTML = `
+                <div><strong>${title}</strong><span class="status">${statusText}</span></div>
+                ${detail ? `<div class="detail">${detail}</div>` : ''}
+                ${solution ? `<div class="solution"><strong>💡 解決方法:</strong><br>${solution}</div>` : ''}
+            `;
+            
+            results.appendChild(item);
+            return item;
+        }
+
+        async function runDiagnostics() {
+            results.innerHTML = '';
+
+            // 1. Firebase SDKの読み込み確認
+            const sdkItem = addCheckItem('1. Firebase SDK', 'loading');
+            await sleep(500);
+            if (typeof firebase !== 'undefined') {
+                sdkItem.className = 'check-item success';
+                sdkItem.innerHTML = sdkItem.innerHTML.replace('⏳ 確認中...', '✅ 正常');
+                sdkItem.querySelector('.detail')?.remove();
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = `Firebase SDKバージョン: ${firebase.SDK_VERSION}`;
+                sdkItem.appendChild(detail);
+            } else {
+                sdkItem.className = 'check-item error';
+                sdkItem.innerHTML = sdkItem.innerHTML.replace('⏳ 確認中...', '❌ エラー');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = 'Firebase SDKが読み込まれていません';
+                sdkItem.appendChild(detail);
+                const solution = document.createElement('div');
+                solution.className = 'solution';
+                solution.innerHTML = '<strong>💡 解決方法:</strong><br>1. インターネット接続を確認<br>2. CDN URLが正しいか確認';
+                sdkItem.appendChild(solution);
+                return;
+            }
+
+            // 2. firebase-config.jsの確認
+            const configItem = addCheckItem('2. firebase-config.js', 'loading');
+            await sleep(500);
+            if (typeof firebaseConfig !== 'undefined') {
+                if (firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+                    configItem.className = 'check-item success';
+                    configItem.innerHTML = configItem.innerHTML.replace('⏳ 確認中...', '✅ 正常');
+                    const detail = document.createElement('div');
+                    detail.className = 'detail';
+                    detail.innerHTML = `プロジェクトID: ${firebaseConfig.projectId}<br>authDomain: ${firebaseConfig.authDomain}`;
+                    configItem.appendChild(detail);
+                } else {
+                    configItem.className = 'check-item error';
+                    configItem.innerHTML = configItem.innerHTML.replace('⏳ 確認中...', '❌ エラー');
+                    const detail = document.createElement('div');
+                    detail.className = 'detail';
+                    detail.textContent = '設定が完了していません（YOUR_API_KEYのまま）';
+                    configItem.appendChild(detail);
+                    const solution = document.createElement('div');
+                    solution.className = 'solution';
+                    solution.innerHTML = '<strong>💡 解決方法:</strong><br>1. FIREBASE_SETUP.mdを参照<br>2. Firebase Consoleから設定をコピー<br>3. firebase-config.jsに貼り付け';
+                    configItem.appendChild(solution);
+                    return;
+                }
+            } else {
+                configItem.className = 'check-item error';
+                configItem.innerHTML = configItem.innerHTML.replace('⏳ 確認中...', '❌ エラー');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = 'firebase-config.jsが読み込まれていません';
+                configItem.appendChild(detail);
+                return;
+            }
+
+            // 3. Firebase初期化
+            const initItem = addCheckItem('3. Firebase初期化', 'loading');
+            await sleep(500);
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                initItem.className = 'check-item success';
+                initItem.innerHTML = initItem.innerHTML.replace('⏳ 確認中...', '✅ 正常');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = 'Firebaseアプリが正常に初期化されました';
+                initItem.appendChild(detail);
+            } catch (error) {
+                initItem.className = 'check-item error';
+                initItem.innerHTML = initItem.innerHTML.replace('⏳ 確認中...', '❌ エラー');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = `エラー: ${error.message}`;
+                initItem.appendChild(detail);
+                const solution = document.createElement('div');
+                solution.className = 'solution';
+                solution.innerHTML = '<strong>💡 解決方法:</strong><br>設定情報を確認してください';
+                initItem.appendChild(solution);
+                return;
+            }
+
+            // 4. 認証プロバイダーの確認
+            const authItem = addCheckItem('4. 認証設定', 'loading');
+            await sleep(500);
+            const auth = firebase.auth();
+            if (auth) {
+                authItem.className = 'check-item success';
+                authItem.innerHTML = authItem.innerHTML.replace('⏳ 確認中...', '✅ 正常');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = 'Firebase Authenticationが利用可能です';
+                authItem.appendChild(detail);
+            } else {
+                authItem.className = 'check-item error';
+                authItem.innerHTML = authItem.innerHTML.replace('⏳ 確認中...', '❌ エラー');
+            }
+
+            // 5. Firestoreの確認
+            const firestoreItem = addCheckItem('5. Firestore Database', 'loading');
+            await sleep(500);
+            const db = firebase.firestore();
+            if (db) {
+                firestoreItem.className = 'check-item success';
+                firestoreItem.innerHTML = firestoreItem.innerHTML.replace('⏳ 確認中...', '✅ 正常');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.textContent = 'Firestoreが利用可能です';
+                firestoreItem.appendChild(detail);
+            } else {
+                firestoreItem.className = 'check-item error';
+                firestoreItem.innerHTML = firestoreItem.innerHTML.replace('⏳ 確認中...', '❌ エラー');
+            }
+
+            // 6. 承認済みドメインの確認
+            const domainItem = addCheckItem('6. 承認済みドメイン', 'loading');
+            await sleep(500);
+            const currentDomain = window.location.hostname;
+            domainItem.className = 'check-item success';
+            domainItem.innerHTML = domainItem.innerHTML.replace('⏳ 確認中...', '💡 確認必要');
+            const detail = document.createElement('div');
+            detail.className = 'detail';
+            detail.innerHTML = `現在のドメイン: ${currentDomain}<br><br>Firebase Consoleで以下を確認:<br>Authentication → Settings → 承認済みドメイン`;
+            domainItem.appendChild(detail);
+            const solution = document.createElement('div');
+            solution.className = 'solution';
+            solution.innerHTML = `<strong>💡 確認方法:</strong><br>1. Firebase Console を開く<br>2. Authentication → Settings → 承認済みドメイン<br>3. 「${currentDomain}」が含まれているか確認<br>4. なければ追加する`;
+            domainItem.appendChild(solution);
+        }
+
+        async function testLogin() {
+            if (typeof firebase === 'undefined' || !firebase.apps.length) {
+                alert('まず「診断開始」を実行してください');
+                return;
+            }
+
+            const loginItem = addCheckItem('ログインテスト', 'loading', 'ログインポップアップを表示します...');
+            
+            try {
+                const auth = firebase.auth();
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                
+                const result = await auth.signInWithPopup(provider);
+                
+                loginItem.className = 'check-item success';
+                loginItem.innerHTML = loginItem.innerHTML.replace('⏳ 確認中...', '✅ 成功');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.innerHTML = `
+                    ログイン成功！<br>
+                    メール: ${result.user.email}<br>
+                    UID: ${result.user.uid}
+                `;
+                loginItem.appendChild(detail);
+                
+                // 自動ログアウト
+                setTimeout(async () => {
+                    await auth.signOut();
+                    alert('テスト完了。自動ログアウトしました。');
+                }, 3000);
+                
+            } catch (error) {
+                loginItem.className = 'check-item error';
+                loginItem.innerHTML = loginItem.innerHTML.replace('⏳ 確認中...', '❌ 失敗');
+                const detail = document.createElement('div');
+                detail.className = 'detail';
+                detail.innerHTML = `
+                    エラーコード: ${error.code}<br>
+                    メッセージ: ${error.message}
+                `;
+                loginItem.appendChild(detail);
+                
+                const solution = document.createElement('div');
+                solution.className = 'solution';
+                let solutionText = '';
+                
+                if (error.code === 'auth/unauthorized-domain') {
+                    solutionText = `
+                        <strong>💡 解決方法:</strong><br>
+                        このドメイン (${window.location.hostname}) が承認されていません。<br><br>
+                        1. Firebase Console → Authentication → Settings<br>
+                        2. 承認済みドメイン → ドメインを追加<br>
+                        3. 「${window.location.hostname}」を追加
+                    `;
+                } else if (error.code === 'auth/popup-blocked') {
+                    solutionText = '<strong>💡 解決方法:</strong><br>ブラウザのポップアップブロックを解除してください';
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    solutionText = '<strong>💡 情報:</strong><br>ユーザーがキャンセルしました（正常）';
+                } else {
+                    solutionText = '<strong>💡 解決方法:</strong><br>TROUBLESHOOTING.mdを参照してください';
+                }
+                
+                solution.innerHTML = solutionText;
+                loginItem.appendChild(solution);
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

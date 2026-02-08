@@ -1,16 +1,21 @@
 // Firebase設定
-// 注意: 本番環境では環境変数を使用してください
+// プロジェクト: judgex-f5512
 
 const firebaseConfig = {
-    // ここにFirebaseプロジェクトの設定を入れます
-    // Firebase Console (https://console.firebase.google.com/) で作成
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAgr9fxd3NJPTmOQhYtgdmk3Nl1tZkDP4g",
+    authDomain: "judgex-f5512.firebaseapp.com",
+    projectId: "judgex-f5512",
+    storageBucket: "judgex-f5512.firebasestorage.app",
+    messagingSenderId: "953096049730",
+    appId: "1:953096049730:web:0f14ba0a302c1f764309db",
+    measurementId: "G-L6H6WRQHH5"
 };
+
+// 設定が完了しているかチェック
+function isFirebaseConfigured() {
+    return firebaseConfig.apiKey !== "YOUR_API_KEY" && 
+           firebaseConfig.projectId !== "YOUR_PROJECT_ID";
+}
 
 // Firebase初期化フラグ
 let firebaseInitialized = false;
@@ -19,12 +24,20 @@ let db = null;
 
 // Firebase初期化
 async function initializeFirebase() {
-    if (firebaseInitialized) return;
+    if (firebaseInitialized) return true;
     
     try {
         // Firebase SDKがロードされているか確認
         if (typeof firebase === 'undefined') {
-            console.warn('Firebase SDK未ロード - ログイン機能は無効');
+            console.warn('Firebase SDK未ロード');
+            showFirebaseError('Firebase SDKが読み込まれていません。ネットワーク接続を確認してください。');
+            return false;
+        }
+        
+        // 設定が完了しているか確認
+        if (!isFirebaseConfigured()) {
+            console.warn('Firebase未設定');
+            showFirebaseInfo('Firebase設定が必要です。FIREBASE_SETUP.mdを参照してください。');
             return false;
         }
         
@@ -34,14 +47,26 @@ async function initializeFirebase() {
         db = firebase.firestore();
         
         firebaseInitialized = true;
-        console.log('Firebase初期化完了');
+        console.log('✅ Firebase初期化完了');
+        console.log('プロジェクトID:', firebaseConfig.projectId);
         
         // 認証状態の監視
         auth.onAuthStateChanged(handleAuthStateChanged);
         
         return true;
     } catch (error) {
-        console.error('Firebase初期化エラー:', error);
+        console.error('❌ Firebase初期化エラー:', error);
+        
+        // エラーの種類に応じたメッセージ
+        let errorMessage = 'Firebase初期化に失敗しました。';
+        
+        if (error.code === 'auth/invalid-api-key') {
+            errorMessage = 'APIキーが無効です。firebase-config.jsの設定を確認してください。';
+        } else if (error.message.includes('project')) {
+            errorMessage = 'プロジェクトIDが正しくありません。firebase-config.jsを確認してください。';
+        }
+        
+        showFirebaseError(errorMessage);
         return false;
     }
 }
@@ -72,19 +97,64 @@ function handleAuthStateChanged(user) {
 
 // Googleログイン
 async function signInWithGoogle() {
+    console.log('🔐 Googleログイン開始');
+    
     if (!auth) {
-        alert('ログイン機能が利用できません');
-        return;
+        const message = 'Firebase認証が初期化されていません。\n\n' +
+                       'Firebase設定が必要です。\n' +
+                       'FIREBASE_SETUP.mdを参照してください。\n\n' +
+                       'または「ゲストモード」でご利用ください。';
+        alert(message);
+        return null;
     }
     
     try {
         const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // ログインプロンプトを強制表示
+        provider.setCustomParameters({
+            prompt: 'select_account'
+        });
+        
+        console.log('ログインポップアップを表示...');
         const result = await auth.signInWithPopup(provider);
-        console.log('ログイン成功:', result.user.email);
+        
+        console.log('✅ ログイン成功:', result.user.email);
+        alert('ログインに成功しました！\n' + result.user.email);
+        
         return result.user;
     } catch (error) {
-        console.error('ログインエラー:', error);
-        alert('ログインに失敗しました: ' + error.message);
+        console.error('❌ ログインエラー:', error);
+        console.error('エラーコード:', error.code);
+        console.error('エラーメッセージ:', error.message);
+        
+        // エラーの種類に応じたメッセージ
+        let errorMessage = 'ログインに失敗しました。';
+        
+        if (error.code === 'auth/popup-closed-by-user') {
+            errorMessage = 'ログインがキャンセルされました。';
+            // キャンセルの場合はアラートを表示しない
+            console.log('ユーザーがキャンセル');
+            return null;
+        } else if (error.code === 'auth/unauthorized-domain') {
+            errorMessage = '⚠️ このドメインは承認されていません。\n\n' +
+                          '【解決方法】\n' +
+                          '1. Firebase Console を開く\n' +
+                          '2. Authentication → Settings → 承認済みドメイン\n' +
+                          '3. このドメインを追加してください\n\n' +
+                          '現在のドメイン: ' + window.location.hostname;
+        } else if (error.code === 'auth/popup-blocked') {
+            errorMessage = 'ポップアップがブロックされました。\n' +
+                          'ブラウザのポップアップブロックを解除してください。';
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = 'ネットワークエラーが発生しました。\n' +
+                          'インターネット接続を確認してください。';
+        } else {
+            errorMessage = 'ログインエラー: ' + error.message + '\n\n' +
+                          'エラーコード: ' + error.code;
+        }
+        
+        alert(errorMessage);
         return null;
     }
 }
@@ -95,11 +165,94 @@ async function signOut() {
     
     try {
         await auth.signOut();
-        console.log('ログアウト成功');
+        console.log('✅ ログアウト成功');
+        alert('ログアウトしました');
     } catch (error) {
-        console.error('ログアウトエラー:', error);
-        alert('ログアウトに失敗しました');
+        console.error('❌ ログアウトエラー:', error);
+        alert('ログアウトに失敗しました: ' + error.message);
     }
+}
+
+// Firebase情報表示
+function showFirebaseInfo(message) {
+    const infoDiv = document.createElement('div');
+    infoDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #fef3c7;
+        border: 2px solid #f59e0b;
+        color: #92400e;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 400px;
+        font-size: 14px;
+        line-height: 1.5;
+    `;
+    infoDiv.innerHTML = `
+        <strong>💡 情報</strong><br>
+        ${message}
+        <br><br>
+        <button onclick="this.parentElement.remove()" style="
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        ">閉じる</button>
+    `;
+    document.body.appendChild(infoDiv);
+    
+    setTimeout(() => {
+        if (infoDiv.parentElement) {
+            infoDiv.remove();
+        }
+    }, 10000);
+}
+
+// Firebaseエラー表示
+function showFirebaseError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #fee;
+        border: 2px solid #f44;
+        color: #c00;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 400px;
+        font-size: 14px;
+        line-height: 1.5;
+    `;
+    errorDiv.innerHTML = `
+        <strong>❌ エラー</strong><br>
+        ${message}
+        <br><br>
+        <button onclick="this.parentElement.remove()" style="
+            background: #f44;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        ">閉じる</button>
+    `;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 15000);
 }
 
 // セッション保存
@@ -113,7 +266,7 @@ async function saveSession() {
         const sessionData = {
             sessionId: AppState.sessionId,
             date: firebase.firestore.FieldValue.serverTimestamp(),
-            version: 'v2.2',
+            version: 'v2.4',
             round: AppState.round,
             inputs: {
                 q1: AppState.inputs.q1,
@@ -141,9 +294,13 @@ async function saveSession() {
             .doc(AppState.sessionId)
             .set(sessionData, { merge: true });
         
-        console.log('セッション保存成功:', AppState.sessionId);
+        console.log('✅ セッション保存成功:', AppState.sessionId);
     } catch (error) {
-        console.error('セッション保存エラー:', error);
+        console.error('❌ セッション保存エラー:', error);
+        
+        if (error.code === 'permission-denied') {
+            alert('保存権限がありません。\nFirestoreのセキュリティルールを確認してください。');
+        }
     }
 }
 
@@ -152,6 +309,8 @@ async function loadUserHistory() {
     if (!db || !AppState.user) return;
     
     try {
+        console.log('📚 履歴を読み込み中...');
+        
         const snapshot = await db.collection('users')
             .doc(AppState.user.uid)
             .collection('sessions')
@@ -169,10 +328,14 @@ async function loadUserHistory() {
             });
         });
         
-        console.log('履歴読み込み完了:', AppState.history.length, '件');
+        console.log('✅ 履歴読み込み完了:', AppState.history.length, '件');
         updateHistoryDisplay();
     } catch (error) {
-        console.error('履歴読み込みエラー:', error);
+        console.error('❌ 履歴読み込みエラー:', error);
+        
+        if (error.code === 'permission-denied') {
+            alert('履歴の読み込み権限がありません。\nFirestoreのセキュリティルールを確認してください。');
+        }
     }
 }
 
@@ -203,8 +366,9 @@ function updateUIForLoggedOut() {
     const userInfo = document.getElementById('userInfo');
     const historyBtn = document.getElementById('btnViewHistory');
     
-    if (loginBtn) loginBtn.style.display = 'inline-block';
+    if (loginBtn) loginBtn.style.display = 'inline-flex';
     if (logoutBtn) logoutBtn.style.display = 'none';
     if (userInfo) userInfo.style.display = 'none';
     if (historyBtn) historyBtn.style.display = 'none';
 }
+

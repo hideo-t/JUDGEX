@@ -106,6 +106,24 @@ https://YOUR_USERNAME.github.io/REPO_NAME/
 
 **注意:** Firebase設定なしでも、ゲストモードで全機能が利用可能です。
 
+#### トラブルシューティング
+
+ログインが失敗する場合は、**Firebase診断ツール**を使用：
+
+```bash
+# ブラウザで firebase-diagnostics.html を開く
+```
+
+診断ツールが自動的に以下をチェック：
+- ✅ Firebase SDK読み込み
+- ✅ firebase-config.js設定
+- ✅ Firebase初期化
+- ✅ 認証設定
+- ✅ Firestore Database
+- 💡 承認済みドメイン確認
+
+詳しくは → [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+
 ### 3. カスタムドメイン（オプション）
 
 独自ドメインを使用する場合：
@@ -180,6 +198,7 @@ pre-judge-suite/
 
 ## バージョン
 
+**v2.4** - ログインエラーハンドリング強化 (2026年2月9日)
 **v2.3** - Googleログインと診断履歴機能追加 (2026年2月9日)
 **v2.2** - フォローアップループ問題修正 (2026年2月9日)
 **v2.1** - デバッグ機能追加 (2026年2月9日)
