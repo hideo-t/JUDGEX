@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRE-JUDGE MAP - 判断以前を整える</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1 class="title">PRE-JUDGE MAP</h1>
+            <p class="subtitle">判断以前を整えて、判断をあなたに返します</p>
+        </header>
+
+        <!-- 固定注意文 -->
+        <div class="notice-banner">
+            <div class="notice-content">
+                <strong>当てません／決めません。</strong>判断以前を整えて、判断をあなたに返します。
+            </div>
+        </div>
+
+        <!-- STEP 1: 同意とスタート -->
+        <div id="step-consent" class="step active">
+            <div class="card consent-card">
+                <h2>ご利用前に</h2>
+                <p class="description">
+                    このツールは、あなたの迷いを「判断可能な状態」に整理し、<br>
+                    <strong>地図（MAP）</strong>と<strong>指数（JUDGEX²）</strong>を提示します。<br>
+                    助言や推奨は一切行いません。
+                </p>
+                
+                <div class="consent-box">
+                    <label class="consent-label">
+                        <input type="checkbox" id="consentCheck" class="consent-checkbox">
+                        <span class="consent-text">助言は求めず、地図と問いの提示のみを受け取ります</span>
+                    </label>
+                </div>
+
+                <button id="btnStart" class="btn btn-primary" disabled>開始する</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: 入力（3つの質問） -->
+        <div id="step-input" class="step">
+            <div class="card input-card">
+                <h2>3つの問いに答えてください</h2>
+                <p class="description">それぞれ10文字以上を推奨（より正確な地図のために）</p>
+
+                <div class="question-group">
+                    <label class="question-label">
+                        <span class="question-number">Q1</span>
+                        <span class="question-text">迷いは何？</span>
+                    </label>
+                    <textarea id="q1" class="question-input" rows="3" placeholder="例：転職すべきかどうか迷っている"></textarea>
+                    <div class="char-counter" data-for="q1">0文字</div>
+                </div>
+
+                <div class="question-group">
+                    <label class="question-label">
+                        <span class="question-number">Q2</span>
+                        <span class="question-text">選ばなければならないことは何？</span>
+                    </label>
+                    <textarea id="q2" class="question-input" rows="3" placeholder="例：今の会社に残るか、新しい会社に行くか"></textarea>
+                    <div class="char-counter" data-for="q2">0文字</div>
+                </div>
+
+                <div class="question-group">
+                    <label class="question-label">
+                        <span class="question-number">Q3</span>
+                        <span class="question-text">決めたら引き受けるものは何？</span>
+                    </label>
+                    <textarea id="q3" class="question-input" rows="3" placeholder="例：年収が下がるリスク、または成長機会を失うリスク"></textarea>
+                    <div class="char-counter" data-for="q3">0文字</div>
+                </div>
+
+                <div id="validationWarning" class="validation-warning" style="display: none;">
+                    ⚠️ 未入力または短い項目があります。地図精度が下がる可能性があります。
+                </div>
+
+                <button id="btnGenerateMap" class="btn btn-primary">MAPを生成（助言なし）</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: MAP表示 -->
+        <div id="step-map" class="step">
+            <div class="card map-card">
+                <h2>あなたのMAP</h2>
+                
+                <!-- Layer表示 -->
+                <div class="layer-display">
+                    <div class="layer-label">現在位置</div>
+                    <div id="layerIndicator" class="layer-indicator">
+                        <div class="layer-badge"></div>
+                    </div>
+                    <div id="layerDescription" class="layer-description"></div>
+                </div>
+
+                <!-- 詰まり点 -->
+                <div class="map-section">
+                    <h3 class="section-title">詰まり点</h3>
+                    <div id="stuckPoints" class="stuck-points-list"></div>
+                </div>
+
+                <!-- 判断可能条件（問い） -->
+                <div class="map-section">
+                    <h3 class="section-title">判断可能条件（問い）</h3>
+                    <div id="questions" class="questions-list"></div>
+                </div>
+
+                <div class="operator-message">
+                    いまはこの位置です。決めるかどうかは、あなたが選んでください。
+                </div>
+
+                <!-- Layer別のアクション -->
+                <div id="layerActions" class="layer-actions"></div>
+            </div>
+        </div>
+
+        <!-- STEP 4: 追加入力（Layer1/2） -->
+        <div id="step-followup" class="step">
+            <div class="card followup-card">
+                <h2 id="followupTitle"></h2>
+                <p id="followupDescription" class="description"></p>
+
+                <div class="question-group">
+                    <textarea id="followupAnswer" class="question-input" rows="3"></textarea>
+                    <div class="char-counter" data-for="followupAnswer">0文字</div>
+                </div>
+
+                <button id="btnSubmitFollowup" class="btn btn-primary">もう一度MAPを生成</button>
+            </div>
+        </div>
+
+        <!-- STEP 5: JUDGEX² -->
+        <div id="step-judgex" class="step">
+            <div class="card judgex-card">
+                <h2>JUDGEX² 計測</h2>
+                <div class="judgex-notice">
+                    これは能力判定ではなく、今の傾向の計測です。
+                </div>
+
+                <div class="judgex-questions">
+                    <!-- J1 -->
+                    <div class="judgex-question">
+                        <div class="judgex-q-title">J1. 決めた後、結果が悪かったときの扱いは？</div>
+                        <div class="judgex-options">
+                            <label class="judgex-option">
+                                <input type="radio" name="j1" value="A">
+                                <span>自分が引き受けて修正する</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j1" value="B">
+                                <span>半分は状況、半分は自分</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j1" value="C">
+                                <span>状況や他者のせいになりやすい</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j1" value="D">
+                                <span>決定そのものをなかったことにしたくなる</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- J2 -->
+                    <div class="judgex-question">
+                        <div class="judgex-q-title">J2. 期限が来たとき、あなたは何をする？</div>
+                        <div class="judgex-options">
+                            <label class="judgex-option">
+                                <input type="radio" name="j2" value="A">
+                                <span>不完全でも決めて動く</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j2" value="B">
+                                <span>追加情報を集めてから決める</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j2" value="C">
+                                <span>期限の解釈を変えて先延ばす</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j2" value="D">
+                                <span>決めない理由を固める</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- J3 -->
+                    <div class="judgex-question">
+                        <div class="judgex-q-title">J3. 「引き受けるもの（代償）」をどう扱う？</div>
+                        <div class="judgex-options">
+                            <label class="judgex-option">
+                                <input type="radio" name="j3" value="A">
+                                <span>最初に明文化してから決める</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j3" value="B">
+                                <span>決めた後に調整しながら背負う</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j3" value="C">
+                                <span>曖昧なまま進めて後で苦しくなる</span>
+                            </label>
+                            <label class="judgex-option">
+                                <input type="radio" name="j3" value="D">
+                                <span>見ないようにして決定を避ける</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btnCalculateJudgex" class="btn btn-primary" disabled>計測する</button>
+            </div>
+        </div>
+
+        <!-- STEP 6: JUDGEX²結果 -->
+        <div id="step-result" class="step">
+            <div class="card result-card">
+                <h2>計測結果</h2>
+
+                <div class="score-display">
+                    <div class="score-gauge">
+                        <div id="scoreBar" class="score-bar"></div>
+                    </div>
+                    <div class="score-value">
+                        <span id="scoreNumber" class="score-number">0</span>
+                        <span class="score-max">/ 100</span>
+                    </div>
+                    <div id="scoreLabel" class="score-label"></div>
+                </div>
+
+                <div class="radar-chart">
+                    <canvas id="radarCanvas" width="300" height="300"></canvas>
+                </div>
+
+                <div class="final-message">
+                    地図（MAP）と指数（JUDGEX²）は渡しました。<br>
+                    選ぶのはあなたです。
+                </div>
+
+                <button id="btnReset" class="btn btn-secondary">最初から始める</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>PRE-JUDGE Suite v1.0 | 助言なし、判断は自分で</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
