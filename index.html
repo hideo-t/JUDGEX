@@ -237,19 +237,29 @@
         <!-- STEP 4: 追加入力（Layer1/2） -->
         <div id="step-followup" class="step">
             <div class="card followup-card">
+                <!-- デバッグ情報（開発用） -->
+                <div id="debugInfoFollowup" style="background: #fff3cd; padding: 10px; margin-bottom: 20px; border-radius: 6px; font-size: 0.85rem; display: none;">
+                    <strong>🐛 フォローアップデバッグ:</strong>
+                    <div>現在のLayer: <span id="debugCurrentLayer"></span></div>
+                    <div>目標Layer: <span id="debugTargetLayer"></span></div>
+                    <div>入力文字数: <span id="debugFollowupLength">0</span></div>
+                </div>
+                
                 <h2 id="followupTitle"></h2>
                 <p id="followupDescription" class="description"></p>
 
                 <div class="question-group">
-                    <textarea id="followupAnswer" class="question-input" rows="3"></textarea>
+                    <textarea id="followupAnswer" class="question-input" rows="3" placeholder="例：本当は新しいことに挑戦したいが、失敗が怖い"></textarea>
                     <div class="input-footer">
                         <div class="char-counter" data-for="followupAnswer">
-                            <span class="char-count">0</span> / 10文字以上推奨
+                            <span class="char-count">0</span> / 5文字以上必須
                         </div>
                     </div>
                 </div>
 
-                <button id="btnSubmitFollowup" class="btn btn-primary">もう一度MAPを生成</button>
+                <div class="action-buttons">
+                    <button id="btnSubmitFollowup" class="btn btn-primary" disabled>もう一度MAPを生成</button>
+                </div>
             </div>
         </div>
 

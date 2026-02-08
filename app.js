@@ -124,9 +124,23 @@ function setupEventListeners() {
     });
 
     // フォローアップ送信
-    document.getElementById('btnSubmitFollowup').addEventListener('click', () => {
-        submitFollowup();
-    });
+    const btnSubmitFollowup = document.getElementById('btnSubmitFollowup');
+    const followupAnswerTextarea = document.getElementById('followupAnswer');
+    
+    // フォローアップのボタン制御
+    if (followupAnswerTextarea && btnSubmitFollowup) {
+        followupAnswerTextarea.addEventListener('input', () => {
+            const length = followupAnswerTextarea.value.trim().length;
+            btnSubmitFollowup.disabled = length < 5;
+            updateCharCounter('followupAnswer');
+        });
+    }
+    
+    if (btnSubmitFollowup) {
+        btnSubmitFollowup.addEventListener('click', () => {
+            submitFollowup();
+        });
+    }
 
     // JUDGEX²計測
     document.getElementById('btnCalculateJudgex').addEventListener('click', () => {
@@ -356,29 +370,43 @@ function processCORE(inputs) {
 
 // Layer判定ロジック
 function determineLayer(q1, q2, q3) {
+    console.log('Layer判定開始');
+    console.log('Q1長さ:', q1.length, 'Q2長さ:', q2.length, 'Q3長さ:', q3.length);
+    
     // 特徴量を計算
     const hasDecisionObject = detectDecisionKeywords(q2);
     const hasResponsibility = detectResponsibilityKeywords(q3);
     const clarityScore = calculateClarityScore(q1, q2, q3);
 
-    // Layer判定
-    if (!hasDecisionObject || clarityScore <= 1) {
-        return 1; // 未整理
-    } else if (hasDecisionObject && !hasResponsibility) {
+    console.log('決定語:', hasDecisionObject, '責任語:', hasResponsibility, '明瞭度:', clarityScore);
+
+    // Layer判定（優先順位: 3 → 2 → 1）
+    if (hasDecisionObject && hasResponsibility && q3.length >= 20) {
+        console.log('→ Layer 3: 判断可能');
+        return 3; // 判断可能
+    } else if (hasDecisionObject && q2.length >= 15) {
+        console.log('→ Layer 2: 判断以前');
         return 2; // 判断以前
     } else {
-        return 3; // 判断可能
+        console.log('→ Layer 1: 未整理');
+        return 1; // 未整理
     }
 }
 
 function detectDecisionKeywords(text) {
-    const keywords = ['選ぶ', '決める', '転職', '買う', '別れる', '移住', '契約', '辞める', '始める', '変える'];
-    return keywords.some(keyword => text.includes(keyword));
+    const keywords = ['選ぶ', '決める', '転職', '買う', '別れる', '移住', '契約', '辞める', '始める', '変える', 
+                      '選択', '決定', '判断', 'やる', '実行', '行う'];
+    const found = keywords.some(keyword => text.includes(keyword));
+    console.log('決定語検出:', found, 'in', text.substring(0, 50) + '...');
+    return found;
 }
 
 function detectResponsibilityKeywords(text) {
-    const keywords = ['引き受ける', '失う', '責任', '代償', 'リスク', '負担', '払う', '覚悟', '犠牲'];
-    return keywords.some(keyword => text.includes(keyword));
+    const keywords = ['引き受ける', '失う', '責任', '代償', 'リスク', '負担', '払う', '覚悟', '犠牲',
+                      '背負う', '受け入れる', '諦める', '手放す'];
+    const found = keywords.some(keyword => text.includes(keyword));
+    console.log('責任語検出:', found, 'in', text.substring(0, 50) + '...');
+    return found;
 }
 
 function calculateClarityScore(q1, q2, q3) {
@@ -611,8 +639,30 @@ function setupFollowup(layer) {
         description.textContent = '引き受けること／引き受けないことは何ですか？';
     }
 
+    // デバッグ情報を表示
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debug') === 'true') {
+        const debugInfo = document.getElementById('debugInfoFollowup');
+        const debugCurrentLayer = document.getElementById('debugCurrentLayer');
+        const debugTargetLayer = document.getElementById('debugTargetLayer');
+        
+        if (debugInfo && debugCurrentLayer && debugTargetLayer) {
+            debugInfo.style.display = 'block';
+            debugCurrentLayer.textContent = layer;
+            debugTargetLayer.textContent = layer + 1;
+        }
+    }
+
     const followupTextarea = document.getElementById('followupAnswer');
+    const submitButton = document.getElementById('btnSubmitFollowup');
+    
+    // テキストエリアをクリア
     followupTextarea.value = '';
+    
+    // ボタンを無効化
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
     
     // 既存のイベントリスナーをクリア（重複防止）
     const newTextarea = followupTextarea.cloneNode(true);
@@ -620,8 +670,18 @@ function setupFollowup(layer) {
     
     // 新しいイベントリスナーを設定
     const textarea = document.getElementById('followupAnswer');
+    const newSubmitButton = document.getElementById('btnSubmitFollowup');
+    const debugFollowupLength = document.getElementById('debugFollowupLength');
+    
     textarea.addEventListener('input', () => {
         updateCharCounter('followupAnswer');
+        const length = textarea.value.trim().length;
+        if (newSubmitButton) {
+            newSubmitButton.disabled = length < 5;
+        }
+        if (debugFollowupLength) {
+            debugFollowupLength.textContent = length;
+        }
     });
     
     updateCharCounter('followupAnswer');
@@ -631,26 +691,70 @@ function setupFollowup(layer) {
 }
 
 function submitFollowup() {
+    console.log('submitFollowup呼び出し');
+    
     const followupAnswer = document.getElementById('followupAnswer').value.trim();
     
     if (!followupAnswer) {
         alert('回答を入力してください');
         return;
     }
+    
+    if (followupAnswer.length < 5) {
+        alert('もう少し詳しく入力してください（5文字以上）');
+        return;
+    }
 
     // 入力を追加
     AppState.inputs.followup = followupAnswer;
-
-    // もう一度MAP生成（既存の入力 + フォローアップ）
-    const coreResult = processCORE({
-        q1: AppState.inputs.q1 + ' ' + followupAnswer,
-        q2: AppState.inputs.q2,
-        q3: AppState.inputs.q3 + ' ' + followupAnswer
-    });
     
+    // 現在のLayerに応じて、適切な質問に追加
+    const currentLayer = AppState.map ? AppState.map.layer : 1;
+    console.log('現在のLayer:', currentLayer);
+    
+    let updatedInputs = {
+        q1: AppState.inputs.q1,
+        q2: AppState.inputs.q2,
+        q3: AppState.inputs.q3
+    };
+    
+    if (currentLayer === 1) {
+        // Layer 1 → Layer 2への昇格を促す
+        // Q2に追加（決定対象を明確にする）
+        updatedInputs.q2 = AppState.inputs.q2 + '\n補足：' + followupAnswer;
+        
+        // 決定語が含まれていない場合は追加
+        if (!detectDecisionKeywords(updatedInputs.q2)) {
+            updatedInputs.q2 += '。どれかを選ぶ必要がある。';
+        }
+        
+        console.log('Layer1処理: Q2に追加しました');
+        
+    } else if (currentLayer === 2) {
+        // Layer 2 → Layer 3への昇格を促す
+        // Q3に追加（引き受けるものを明確にする）
+        updatedInputs.q3 = AppState.inputs.q3 + '\n補足：' + followupAnswer;
+        
+        // 責任語が含まれていない場合は追加
+        if (!detectResponsibilityKeywords(updatedInputs.q3)) {
+            updatedInputs.q3 += '。このリスクと責任を引き受ける必要がある。';
+        }
+        
+        console.log('Layer2処理: Q3に追加しました');
+    }
+
+    // 更新された入力で再度CORE処理
+    const coreResult = processCORE(updatedInputs);
+    console.log('新しいLayer:', coreResult.layer);
+    
+    // 状態を更新
+    AppState.inputs.q1 = updatedInputs.q1;
+    AppState.inputs.q2 = updatedInputs.q2;
+    AppState.inputs.q3 = updatedInputs.q3;
     AppState.map = coreResult;
     AppState.round++;
 
+    // MAPを表示
     displayMap(coreResult);
     showStep('step-map');
 }
