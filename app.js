@@ -6,7 +6,10 @@
 const AppState = {
     sessionId: null,
     round: 0,
-    currentStep: 'consent', // consent, q1, q2, q3, map, followup, judgex, result
+    currentStep: 'consent', // consent, q1, q2, q3, map, followup, judgex, result, history
+    loginMode: 'guest', // guest または login
+    user: null, // { uid, email, displayName, photoURL }
+    history: [], // 診断履歴
     inputs: {
         q1: '',
         q2: '',
@@ -52,6 +55,15 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
     // セッションIDを生成
     AppState.sessionId = generateSessionId();
+    
+    // Firebase初期化（非同期）
+    initializeFirebase().then(success => {
+        if (success) {
+            // ログインボタンを表示
+            const loginBtn = document.getElementById('btnGoogleLogin');
+            if (loginBtn) loginBtn.style.display = 'inline-flex';
+        }
+    });
 }
 
 function generateSessionId() {
@@ -68,11 +80,50 @@ function setupEventListeners() {
     });
 
     // 開始ボタン
-    document.getElementById('btnStart').addEventListener('click', () => {
+    document.getElementById('btnStart').addEventListener('click', async () => {
+        // ログインモードを取得
+        const loginMode = document.querySelector('input[name="loginMode"]:checked').value;
+        AppState.loginMode = loginMode;
+        
+        // ログインモードの場合はログイン処理
+        if (loginMode === 'login' && !AppState.user) {
+            const user = await signInWithGoogle();
+            if (!user) {
+                // ログイン失敗 or キャンセル
+                return;
+            }
+        }
+        
         AppState.currentStep = 'q1';
         showStep('step-q1');
         updateProgress(1);
     });
+    
+    // Googleログインボタン
+    const btnGoogleLogin = document.getElementById('btnGoogleLogin');
+    if (btnGoogleLogin) {
+        btnGoogleLogin.addEventListener('click', signInWithGoogle);
+    }
+    
+    // ログアウトボタン
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', signOut);
+    }
+    
+    // 履歴表示ボタン
+    const btnViewHistory = document.getElementById('btnViewHistory');
+    if (btnViewHistory) {
+        btnViewHistory.addEventListener('click', showHistory);
+    }
+    
+    // 履歴閉じるボタン
+    const btnCloseHistory = document.getElementById('btnCloseHistory');
+    if (btnCloseHistory) {
+        btnCloseHistory.addEventListener('click', () => {
+            showStep('step-consent');
+        });
+    }
 
     // Q1の次へ
     document.getElementById('btnQ1Next').addEventListener('click', () => {
@@ -337,6 +388,11 @@ function generateMap() {
     
     // プログレスバーを非表示
     document.getElementById('progress-container').style.display = 'none';
+    
+    // セッションを保存（ログインモードの場合）
+    if (AppState.loginMode === 'login') {
+        saveSession();
+    }
 }
 
 // ========================================
@@ -837,6 +893,11 @@ function displayJudgexResult() {
 
     // レーダーチャート
     drawRadarChart(result.axisA, result.axisB, result.axisC);
+    
+    // セッションを保存（ログインモードの場合）
+    if (AppState.loginMode === 'login') {
+        saveSession();
+    }
 }
 
 function animateNumber(element, start, end, duration) {
@@ -999,11 +1060,11 @@ function resetApp() {
 // ========================================
 // セッション保存・復元（オプション）
 // ========================================
-function saveSession() {
+function saveSessionLocal() {
     localStorage.setItem('prejudge_session', JSON.stringify(AppState));
 }
 
-function loadSession() {
+function loadSessionLocal() {
     const saved = localStorage.getItem('prejudge_session');
     if (saved) {
         try {
@@ -1013,4 +1074,174 @@ function loadSession() {
             console.error('セッション復元エラー:', e);
         }
     }
+}
+
+// ========================================
+// 履歴表示
+// ========================================
+function showHistory() {
+    showStep('step-history');
+    updateHistoryDisplay();
+}
+
+function updateHistoryDisplay() {
+    const historyList = document.getElementById('historyList');
+    const growthChart = document.getElementById('growthChart');
+    
+    if (!AppState.history || AppState.history.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">履歴がありません</div>';
+        growthChart.style.display = 'none';
+        return;
+    }
+    
+    // 履歴リストを生成
+    historyList.innerHTML = '';
+    AppState.history.forEach(session => {
+        const item = createHistoryItem(session);
+        historyList.appendChild(item);
+    });
+    
+    // JUDGEX²スコアがある履歴から成長グラフを描画
+    const scoresData = AppState.history
+        .filter(s => s.judgex2 && s.judgex2.score !== null)
+        .reverse(); // 古い順にする
+    
+    if (scoresData.length >= 2) {
+        growthChart.style.display = 'block';
+        drawGrowthChart(scoresData);
+    } else {
+        growthChart.style.display = 'none';
+    }
+}
+
+function createHistoryItem(session) {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    
+    const date = session.date ? new Date(session.date).toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }) : '日時不明';
+    
+    const layer = session.map ? session.map.layer : '-';
+    const score = session.judgex2 ? session.judgex2.score : null;
+    const version = session.version || 'v1.0';
+    
+    div.innerHTML = `
+        <div class="history-header">
+            <div class="history-date">${date}</div>
+            <div class="history-version">${version}</div>
+        </div>
+        <div class="history-summary">
+            <div class="history-badge layer${layer}">Layer ${layer}</div>
+            ${score !== null ? `<div class="history-badge"><span class="history-score">${score}点</span></div>` : ''}
+        </div>
+    `;
+    
+    // クリックで詳細表示（将来実装）
+    div.addEventListener('click', () => {
+        console.log('履歴詳細:', session);
+        // TODO: 詳細モーダルを表示
+    });
+    
+    return div;
+}
+
+function drawGrowthChart(scoresData) {
+    const canvas = document.getElementById('growthCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = 60;
+    
+    // キャンバスをクリア
+    ctx.clearRect(0, 0, width, height);
+    
+    // データ準備
+    const scores = scoresData.map(s => s.judgex2.score);
+    const dates = scoresData.map(s => {
+        const d = new Date(s.date);
+        return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+    
+    const maxScore = 100;
+    const minScore = 0;
+    const dataPoints = scores.length;
+    
+    // 軸の描画
+    ctx.strokeStyle = '#e1e8ed';
+    ctx.lineWidth = 2;
+    
+    // Y軸
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+    
+    // X軸
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Y軸ラベル
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+        const y = height - padding - (i * (height - padding * 2) / 5);
+        const label = (i * 20).toString();
+        ctx.fillText(label, padding - 10, y + 4);
+    }
+    
+    // グラフの描画
+    ctx.strokeStyle = '#2c5f7c';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    
+    scores.forEach((score, index) => {
+        const x = padding + (index * (width - padding * 2) / (dataPoints - 1));
+        const y = height - padding - ((score / maxScore) * (height - padding * 2));
+        
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+    
+    ctx.stroke();
+    
+    // データポイント
+    ctx.fillStyle = '#2c5f7c';
+    scores.forEach((score, index) => {
+        const x = padding + (index * (width - padding * 2) / (dataPoints - 1));
+        const y = height - padding - ((score / maxScore) * (height - padding * 2));
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // スコア表示
+        ctx.fillStyle = '#2c5f7c';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(score.toString(), x, y - 12);
+        
+        // 日付表示
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(dates[index], x, height - padding + 20);
+    });
+    
+    // タイトル
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('スコアの推移', width / 2, 30);
 }

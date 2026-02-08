@@ -30,6 +30,27 @@ Layer 3に到達したときのみ計測可能：
 - スコア（0-100）と傾向ラベル（回避/保留/引き受け）を提示
 - レーダーチャートで3軸を可視化
 
+### 3. Googleログインと診断履歴 ✨ NEW (v2.3)
+**2つの利用モードを選択可能：**
+
+#### ゲストモード（従来通り）
+- ログイン不要
+- 履歴保存なし
+- すぐに始められる
+
+#### ログインモード（新機能）
+- Googleアカウントでログイン
+- 診断履歴を自動保存
+- 過去の診断を振り返り可能
+- 成長の可視化（スコア推移グラフ）
+
+**保存される情報：**
+- 診断日時
+- バージョン番号
+- Layer（到達レベル）
+- JUDGEX²スコア
+- 入力した質問内容
+
 ## 技術スタック
 
 - **HTML5** - セマンティックマークアップ
@@ -46,10 +67,10 @@ Layer 3に到達したときのみ計測可能：
 git init
 
 # ファイルを追加
-git add index.html styles.css app.js README.md
+git add index.html styles.css app.js firebase-config.js README.md
 
 # 初回コミット
-git commit -m "Initial commit: PRE-JUDGE Suite v1.0"
+git commit -m "Initial commit: PRE-JUDGE Suite v2.3"
 
 # GitHubリポジトリをリモートとして追加（YOUR_USERNAMEとREPO_NAMEを置き換え）
 git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
@@ -71,6 +92,19 @@ git push -u origin main
 ```
 https://YOUR_USERNAME.github.io/REPO_NAME/
 ```
+
+### 3. Firebase設定（ログイン機能を使う場合）
+
+ログイン機能と履歴保存を有効にするには、Firebase設定が必要です：
+
+1. **FIREBASE_SETUP.md** を参照
+2. Firebaseプロジェクトを作成（5分）
+3. `firebase-config.js` に設定情報を記入
+4. GitHubにプッシュ
+
+詳しくは → [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)
+
+**注意:** Firebase設定なしでも、ゲストモードで全機能が利用可能です。
 
 ### 3. カスタムドメイン（オプション）
 
@@ -146,7 +180,11 @@ pre-judge-suite/
 
 ## バージョン
 
-**v1.0** - 初回リリース (2026年2月)
+**v2.3** - Googleログインと診断履歴機能追加 (2026年2月9日)
+**v2.2** - フォローアップループ問題修正 (2026年2月9日)
+**v2.1** - デバッグ機能追加 (2026年2月9日)
+**v2.0** - UX大幅改善 (2026年2月9日)
+**v1.0** - 初回リリース (2026年2月8日)
 
 ## フィードバック
 
